@@ -1,0 +1,29 @@
+build_lib(
+  LIBNAME abr
+  SOURCE_FILES
+    helper/abr-helper.cc
+    model/abr-dpd.cc
+    model/abr-id-cache.cc
+    model/abr-neighbor.cc
+    model/abr-packet.cc
+    model/abr-routing-protocol.cc
+    model/abr-rqueue.cc
+    model/abr-rtable.cc
+  HEADER_FILES
+    helper/abr-helper.h
+    model/abr-dpd.h
+    model/abr-id-cache.h
+    model/abr-neighbor.h
+    model/abr-packet.h
+    model/abr-routing-protocol.h
+    model/abr-rqueue.h
+    model/abr-rtable.h
+  LIBRARIES_TO_LINK ${libinternet}
+                    ${libwifi}
+  TEST_SOURCES
+    test/abr-id-cache-test-suite.cc
+    test/abr-regression.cc
+    test/abr-test-suite.cc
+    test/loopback.cc
+    test/bug-772.cc
+)

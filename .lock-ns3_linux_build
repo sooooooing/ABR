@@ -1,0 +1,32 @@
+#! /usr/bin/env python3
+
+launch_dir = '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40'
+run_dir = '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40'
+top_dir = '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40'
+out_dir = '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build'
+
+
+NS3_ENABLED_MODULES = ['ns3-wimax', 'ns3-wifi', 'ns3-virtual-net-device', 'ns3-uan', 'ns3-traffic-control', 'ns3-topology-read', 'ns3-tap-bridge', 'ns3-stats', 'ns3-spectrum', 'ns3-sixlowpan', 'ns3-propagation', 'ns3-point-to-point-layout', 'ns3-point-to-point', 'ns3-olsr', 'ns3-nix-vector-routing', 'ns3-network', 'ns3-netanim', 'ns3-mobility', 'ns3-mesh', 'ns3-lte', 'ns3-lr-wpan', 'ns3-internet-apps', 'ns3-internet', 'ns3-flow-monitor', 'ns3-fd-net-device', 'ns3-energy', 'ns3-dsr', 'ns3-dsdv', 'ns3-csma-layout', 'ns3-csma', 'ns3-core', 'ns3-config-store', 'ns3-buildings', 'ns3-bridge', 'ns3-applications', 'ns3-aodv', 'ns3-antenna', 'ns3-abr', ]
+NS3_ENABLED_CONTRIBUTED_MODULES = []
+NS3_MODULE_PATH = ['/home/suin/.vscode-server/data/User/globalStorage/github.copilot-chat/debugCommand', '/home/suin/.vscode-server/data/User/globalStorage/github.copilot-chat/copilotCli', '/home/suin/.vscode-server/bin/591199df409fbf59b4b52d5ad4ee0470152a9b31/bin/remote-cli', '/usr/local/sbin', '/usr/local/bin', '/usr/sbin', '/usr/bin', '/sbin', '/bin', '/usr/games', '/usr/local/games', '/usr/lib/wsl/lib', '/mnt/c/WINDOWS/system32', '/mnt/c/WINDOWS', '/mnt/c/WINDOWS/System32/Wbem', '/mnt/c/WINDOWS/System32/WindowsPowerShell/v1.0/', '/mnt/c/WINDOWS/System32/OpenSSH/', '/mnt/c/Program Files (x86)/NetSarang/Xshell 8/', '/mnt/c/Program Files/Git/cmd', '/mnt/c/Program Files/dotnet/', '/mnt/c/Users/user/AppData/Local/Programs/Python/Launcher/', '/mnt/c/Users/user/AppData/Local/Microsoft/WindowsApps', '/mnt/c/Users/user/AppData/Local/Programs/Microsoft VS Code/bin', '/snap/bin', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/lib']
+ENABLE_REAL_TIME = False
+ENABLE_EXAMPLES = False
+ENABLE_TESTS = False
+ENABLE_OPENFLOW = False
+NSCLICK = False
+ENABLE_BRITE = False
+ENABLE_SUDO = False
+ENABLE_PYTHON_BINDINGS = False
+EXAMPLE_DIRECTORIES = []
+APPNAME = 'ns'
+BUILD_PROFILE = 'default'
+VERSION = '3.40' 
+BUILD_VERSION_STRING = '' 
+PYTHON = ['/usr/bin/python3']
+VALGRIND_FOUND = False 
+
+
+ns3_runnable_programs = ['/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/utils/perf/ns3.40-perf-io-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/utils/ns3.40-print-introspected-doxygen-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/utils/ns3.40-bench-packets-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/utils/ns3.40-bench-scheduler-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/scratch/subdir/ns3.40-scratch-subdir-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/scratch/nested-subdir/ns3.40-scratch-nested-subdir-executable-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/scratch/ns3.40-test-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/scratch/ns3.40-study-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/scratch/ns3.40-study-rerr-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/scratch/ns3.40-scratch-simulator-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/scratch/ns3.40-aodv-study-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/scratch/ns3.40-abr-test-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/src/tap-bridge/ns3.40-tap-creator-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/src/fd-net-device/ns3.40-tap-device-creator-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/build/src/fd-net-device/ns3.40-raw-sock-creator-default', '/home/suin/ns-allinone-3.40/ns-allinone-3.40/ns-3.40/cmake-cache/ns3.40-stdlib_pch_exec-default', ]
+
+ns3_runnable_scripts = []
+

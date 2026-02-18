@@ -1,0 +1,21 @@
+# NS-3 Build outputs
+build/
+cmake-cache/
+.cmake/
+CMakeFiles/
+CPackConfig.cmake
+CPackSourceConfig.cmake
+Makefile
+cmake_install.cmake
+
+# Python/Temporary files
+__pycache__/
+*.pyc
+.lock-waf*
+.vscode/
+
+# Simulation results
+*.pcap
+*.trace
+
+*.Zone.Identifier
