@@ -132,12 +132,37 @@ std::ostream& operator<<(std::ostream& os, const TypeHeader& h);
   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   |                  Originator Sequence Number                   |
   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  |                  Aggregate Tick                           |
+
+  IN_LEN: 4 bytes
+
+  |                  IN_IDS[]                                     |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |                  Tick[]                                       |
   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   \endverbatim
 */
 
-// 기존 RREQ 헤더에 Aggregate Tick 필드 추가
+struct NeighborTick
+{
+    Ipv4Address neighbor;
+    uint32_t tick;
+
+    NeighborTick() = default;
+
+    NeighborTick(Ipv4Address n, uint32_t t)
+        : neighbor(n),
+          tick(t)
+    {
+    }
+};
+
+struct MetricBlock
+{
+    Ipv4Address owner;
+    std::vector<NeighborTick> ticks;
+};
+
+// 기존 RREQ 헤더에 IN_LEN, IN_IDS[]와 Tick[] 필드를 추가
 class RreqHeader : public Header
 {
   public:
@@ -161,7 +186,8 @@ class RreqHeader : public Header
                uint32_t dstSeqNo = 0,
                Ipv4Address origin = Ipv4Address(),
                uint32_t originSeqNo = 0,
-               uint32_t aggregateTick = 0);
+               const std::vector<Ipv4Address>& inIds = {},
+               const std::vector<MetricBlock>& metricBlocks = {});
 
     /**
      * \brief Get the type ID.
@@ -283,54 +309,40 @@ class RreqHeader : public Header
         return m_originSeqNo;
     }
 
-    // 추가
-    void SetAggregateTick(uint32_t tick)
+    void SetInIds(const std::vector<Ipv4Address>& inIds)
     {
-        m_aggregateTick = tick;
+        m_inIds = inIds;
     }
 
-    uint32_t GetAggregateTick() const
+    std::vector<Ipv4Address> GetInIds() const
     {
-        return m_aggregateTick;
+        return m_inIds;
+    }
+
+    void SetMetricBlocks(const std::vector<MetricBlock>& metricBlocks)
+    {
+        m_metricBlocks = metricBlocks;
+    }
+
+    std::vector<MetricBlock> GetMetricBlocks() const
+    {
+        return m_metricBlocks;
     }
 
     // Flags
-    /**
-     * \brief Set the gratuitous RREP flag
-     * \param f the gratuitous RREP flag
-     */
     void SetGratuitousRrep(bool f);
-    /**
-     * \brief Get the gratuitous RREP flag
-     * \return the gratuitous RREP flag
-     */
     bool GetGratuitousRrep() const;
-    /**
-     * \brief Set the Destination only flag
-     * \param f the Destination only flag
-     */
     void SetDestinationOnly(bool f);
-    /**
-     * \brief Get the Destination only flag
-     * \return the Destination only flag
-     */
     bool GetDestinationOnly() const;
-    /**
-     * \brief Set the unknown sequence number flag
-     * \param f the unknown sequence number flag
-     */
     void SetUnknownSeqno(bool f);
-    /**
-     * \brief Get the unknown sequence number flag
-     * \return the unknown sequence number flag
-     */
     bool GetUnknownSeqno() const;
 
-    /**
-     * \brief Comparison operator
-     * \param o RREQ header to compare
-     * \return true if the RREQ headers are equal
-     */
+    //
+    void AppendInId(Ipv4Address id); // IN_ID 경로 누적
+    void AppendMetricBlock(Ipv4Address owner,
+                           const std::vector<NeighborTick>& ticks); // MetricBlock 누적
+    bool PruneLastMetricBlock(Ipv4Address me); // 나와 upstream 사이 tick만 유지
+
     bool operator==(const RreqHeader& o) const;
 
   private:
@@ -343,7 +355,8 @@ class RreqHeader : public Header
     Ipv4Address m_origin;   ///< Originator IP Address
     uint32_t m_originSeqNo; ///< Source Sequence Number
     // 추가
-    uint32_t m_aggregateTick; ///< Aggregate Tick
+    std::vector<Ipv4Address> m_inIds;        ///< List of intermediate node IDs
+    std::vector<MetricBlock> m_metricBlocks; ///< List of metric blocks
 };
 
 /**

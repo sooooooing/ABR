@@ -1041,6 +1041,8 @@ RoutingProtocol::LoopbackRoute(const Ipv4Header& hdr, Ptr<NetDevice> oif) const
     return rt;
 }
 
+// TODO1
+// RREQ 메시지 생성 및 전송
 void
 RoutingProtocol::SendRequest(Ipv4Address dst)
 {
@@ -1058,15 +1060,14 @@ RoutingProtocol::SendRequest(Ipv4Address dst)
     {
         m_rreqCount++;
     }
+
     // Create RREQ header
     RreqHeader rreqHeader;
-    rreqHeader.SetDst(dst);
+    rreqHeader.SetDst(dst); // 목적지 주소 설정
 
     RoutingTableEntry rt;
-    // Using the Hop field in Routing Table to manage the expanding ring search
-    // 네트워크의 혼잡을 줄이기 위해 소스노드는 목적지노드로부터 만료될때까지 데이터가 도착하지
-    // 못하면 TTL 값을 증가시키면서 RREQ를 재전송
     uint16_t ttl = m_ttlStart;
+
     if (m_routingTable.LookupRoute(dst, rt))
     {
         if (rt.GetFlag() != IN_SEARCH) // 기존 라우트가 VALID or INVALID 상태인 경우
@@ -1101,6 +1102,7 @@ RoutingProtocol::SendRequest(Ipv4Address dst)
     else // 기존 라우트가 없는 경우
     {
         rreqHeader.SetUnknownSeqno(true);
+
         Ptr<NetDevice> dev = nullptr;
         RoutingTableEntry newEntry(/*dev=*/dev,
                                    /*dst=*/dst,
@@ -1141,10 +1143,13 @@ RoutingProtocol::SendRequest(Ipv4Address dst)
         Ptr<Socket> socket = j->first;
         Ipv4InterfaceAddress iface = j->second;
 
-        rreqHeader.SetOrigin(iface.GetLocal()); // 해당 인터페이스의 로컬 IP
-        m_rreqIdCache.IsDuplicate(iface.GetLocal(),
-                                  m_requestId); // 자기 자신이 보낸 RREQ도 캐시에 저장해 중복 방지
-        //
+        // TOD02 rreqHeader에 자신의 식별자 주소, tick = 0 으로 추가
+        RreqHeader rHeader = rreqHeader;
+        rHeader.SetOrigin(iface.GetLocal());
+
+        m_rreqIdCache.IsDuplicate(
+            iface.GetLocal(),
+            m_requestId); // 자기 자신이 보낸 RREQ도 캐시에 저장해 중복 방지 .. seen table 역할
 
         // 패킷 생성 + TTL 설정
         Ptr<Packet> packet = Create<Packet>();
@@ -1153,7 +1158,7 @@ RoutingProtocol::SendRequest(Ipv4Address dst)
         packet->AddPacketTag(tag);
 
         // IP헤더 -> ABR 타입 헤더 -> RREQ 헤더 -> 페이로드 순으로 구성
-        packet->AddHeader(rreqHeader);
+        packet->AddHeader(rHeader);
         TypeHeader tHeader(ABRTYPE_RREQ);
         packet->AddHeader(tHeader);
 
@@ -1338,6 +1343,7 @@ RoutingProtocol::UpdateRouteToNeighbor(Ipv4Address sender, Ipv4Address receiver)
     }
 }
 
+// TODO3
 // src = RREQ를 보낸 노드 주소
 void
 RoutingProtocol::RecvRequest(Ptr<Packet> p, Ipv4Address receiver, Ipv4Address src)
@@ -1360,12 +1366,6 @@ RoutingProtocol::RecvRequest(Ptr<Packet> p, Ipv4Address receiver, Ipv4Address sr
     // 중복된 RREQ인지 확인
     uint32_t id = rreqHeader.GetId();
     Ipv4Address origin = rreqHeader.GetOrigin();
-
-    /*
-     *  Node checks to determine whether it has received a RREQ with the same Originator IP Address
-     * and RREQ ID. If such a RREQ has been received, the node silently discards the newly received
-     * RREQ.
-     */
     if (m_rreqIdCache.IsDuplicate(origin, id))
     {
         NS_LOG_DEBUG("Ignoring RREQ due to duplicate");
