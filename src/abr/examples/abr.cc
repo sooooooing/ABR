@@ -31,9 +31,6 @@
 #include <cmath>
 #include <iostream>
 
-#include "ns3/netanim-module.h"
-#include "ns3/flow-monitor-module.h"
-
 using namespace ns3;
 
 /**
@@ -121,7 +118,7 @@ main(int argc, char** argv)
 AbrExample::AbrExample()
     : size(10),
       step(50),
-      totalTime(50),
+      totalTime(100),
       pcap(true),
       printRoutes(true)
 {
@@ -130,9 +127,8 @@ AbrExample::AbrExample()
 bool
 AbrExample::Configure(int argc, char** argv)
 {
-    // +) Enable per-node ABR logs for AT/BQ debugging in this scenario
-    LogComponentEnable("AbrRoutingProtocol", LOG_LEVEL_INFO);
-    LogComponentEnable("AbrNeighbors", LOG_LEVEL_INFO);
+    // Enable ABR logs by default. Comment this if too noisy
+    // LogComponentEnable("AbrRoutingProtocol", LOG_LEVEL_ALL);
 
     SeedManager::SetSeed(12345);
     CommandLine cmd(__FILE__);
@@ -160,21 +156,6 @@ AbrExample::Run()
     std::cout << "Starting simulation for " << totalTime << " s ...\n";
 
     Simulator::Stop(Seconds(totalTime));
-
-    Ptr<FlowMonitor> flowmon;
-    FlowMonitorHelper flow;
-    flowmon = flow.InstallAll();
-    AnimationInterface anim("abr_test.xml");
-    anim.EnablePacketMetadata();
-    anim.EnableIpv4RouteTracking("abr_route.xml",Seconds(1),Seconds(totalTime));
-    anim.EnableQueueCounters(Seconds(0), Seconds(totalTime));
-
-    for(uint32_t i = 0; i < nodes.GetN(); ++i) 
-    {
-        anim.UpdateNodeDescription(i, "node " + std::to_string(i));
-        anim.UpdateNodeSize(i, 6, 6);
-    }
-
     Simulator::Run();
     Simulator::Destroy();
 }
@@ -196,22 +177,22 @@ AbrExample::CreateNodes()
         os << "node-" << i;
         Names::Add(os.str(), nodes.Get(i));
     }
-
-    // ABR) 이동 및 배치 설정
+    // Create static grid
     MobilityHelper mobility;
-    ObjectFactory userPosAlloc;
-    userPosAlloc.SetTypeId("ns3::RandomRectanglePositionAllocator");
-    userPosAlloc.Set("X",StringValue("ns3::UniformRandomVariable[Min=0.0|Max=20.0]"));
-    userPosAlloc.Set("Y",StringValue("ns3::UniformRandomVariable[Min=0.0|Max=20.0]"));
-
-    Ptr<PositionAllocator> waypos = userPosAlloc.Create() -> GetObject<PositionAllocator>();   
-                                  
-    mobility.SetMobilityModel("ns3::RandomWaypointMobilityModel",
-                              "Speed", StringValue("ns3::UniformRandomVariable[Min=2.0|Max=6.0]"), // 2-6m/s 속도로 이동 
-                              "Pause", StringValue("ns3::UniformRandomVariable[Min=0.0|Max=2.0]"),  
-                              "PositionAllocator", PointerValue(waypos));
-    mobility.SetPositionAllocator(waypos);
-
+    mobility.SetPositionAllocator("ns3::GridPositionAllocator",
+                                  "MinX",
+                                  DoubleValue(0.0),
+                                  "MinY",
+                                  DoubleValue(0.0),
+                                  "DeltaX",
+                                  DoubleValue(step),
+                                  "DeltaY",
+                                  DoubleValue(0),
+                                  "GridWidth",
+                                  UintegerValue(size),
+                                  "LayoutType",
+                                  StringValue("RowFirst"));
+    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
     mobility.Install(nodes);
 }
 
@@ -222,10 +203,6 @@ AbrExample::CreateDevices()
     wifiMac.SetType("ns3::AdhocWifiMac");
     YansWifiPhyHelper wifiPhy;
     YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
-
-    wifiChannel.AddPropagationLoss("ns3::RangePropagationLossModel",
-                                   "MaxRange", DoubleValue(10.0)); // 10m
-
     wifiPhy.SetChannel(wifiChannel.Create());
     WifiHelper wifi;
     wifi.SetRemoteStationManager("ns3::ConstantRateWifiManager",
@@ -272,13 +249,10 @@ AbrExample::InstallApplications()
     p.Stop(Seconds(totalTime) - Seconds(0.001));
 
     // move node away
-    /*
     Ptr<Node> node = nodes.Get(size / 2);
     Ptr<MobilityModel> mob = node->GetObject<MobilityModel>();
     Simulator::Schedule(Seconds(totalTime / 3),
                         &MobilityModel::SetPosition,
                         mob,
                         Vector(1e5, 1e5, 1e5));
-    */                   
-                        
 }
