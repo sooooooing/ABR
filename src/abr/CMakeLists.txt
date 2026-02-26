@@ -9,6 +9,7 @@ build_lib(
     model/abr-routing-protocol.cc
     model/abr-rqueue.cc
     model/abr-rtable.cc
+    model/abr-ntable.cc
   HEADER_FILES
     helper/abr-helper.h
     model/abr-dpd.h
@@ -18,6 +19,7 @@ build_lib(
     model/abr-routing-protocol.h
     model/abr-rqueue.h
     model/abr-rtable.h
+    model/abr-ntable.h
   LIBRARIES_TO_LINK ${libinternet}
                     ${libwifi}
   TEST_SOURCES

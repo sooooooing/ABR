@@ -114,6 +114,7 @@ struct CloseNeighbor
     }
 };
 
+// 만료된 이웃 제거, 링크 실패로 표시된 이웃 ㅔㅈ거
 void
 Neighbors::Purge()
 {
