@@ -380,6 +380,11 @@ RreqHeader::AppendInId(Ipv4Address inId)
 void
 RreqHeader::AppendMetricBlock(Ipv4Address owner, const std::vector<NeighborTick>& ticks)
 {
+    if (ticks.empty())
+    {
+        return;
+    }
+
     MetricBlock block;
     block.owner = owner;
     block.ticks = ticks;
@@ -437,32 +442,21 @@ RreqHeader::PruneUpstreamMetricBlock(Ipv4Address upstreamOwner, Ipv4Address me)
     for (auto it = m_metricBlocks.rbegin(); it != m_metricBlocks.rend(); ++it)
     {
         if (it->owner != upstreamOwner)
-        {
             continue;
-        }
 
         if (it->ticks.empty())
-        {
             return false;
-        }
 
-        std::vector<NeighborTick> prunedTicks;
         for (const auto& t : it->ticks)
         {
             if (t.neighbor == me)
             {
-                prunedTicks.push_back(t);
-                break;
+                it->ticks = {t};
+                return true;
             }
         }
 
-        if (prunedTicks.empty())
-        {
-            return false;
-        }
-
-        it->ticks = prunedTicks;
-        return true;
+        return false;
     }
 
     return false;
@@ -498,6 +492,29 @@ RreqHeader::operator==(const RreqHeader& o) const
     }
 
     return true;
+}
+
+void
+RreqHeader::ForceSetUpstreamTick(Ipv4Address upstreamOwner, Ipv4Address me, uint32_t tick)
+{
+    NeighborTick nt;
+    nt.neighbor = me;
+    nt.tick = tick;
+
+    for (auto it = m_metricBlocks.rbegin(); it != m_metricBlocks.rend(); ++it)
+    {
+        if (it->owner == upstreamOwner)
+        {
+            it->ticks.clear();
+            it->ticks.push_back(nt);
+            return;
+        }
+    }
+
+    MetricBlock mb;
+    mb.owner = upstreamOwner;
+    mb.ticks = {nt};
+    m_metricBlocks.push_back(mb);
 }
 
 //-----------------------------------------------------------------------------

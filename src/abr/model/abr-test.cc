@@ -119,7 +119,7 @@ main(int argc, char** argv)
 //-----------------------------------------------------------------------------
 AbrExample::AbrExample()
     : size(10),
-      step(50),
+      step(100),
       totalTime(100),
       pcap(true),
       printRoutes(true)
@@ -228,7 +228,7 @@ AbrExample::CreateDevices()
 
     wifiChannel.AddPropagationLoss("ns3::RangePropagationLossModel",
                                    "MaxRange",
-                                   DoubleValue(10.0)); // 10m
+                                   DoubleValue(50.0)); // 10m
 
     wifiPhy.SetChannel(wifiChannel.Create());
     WifiHelper wifi;

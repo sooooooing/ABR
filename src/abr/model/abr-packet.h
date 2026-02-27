@@ -206,6 +206,7 @@ class RreqHeader : public Header
     void Serialize(Buffer::Iterator start) const override;
     uint32_t Deserialize(Buffer::Iterator start) override;
     void Print(std::ostream& os) const override;
+    void ForceSetUpstreamTick(Ipv4Address upstreamOwner, Ipv4Address me, uint32_t tick);
 
     // Fields
     /**
