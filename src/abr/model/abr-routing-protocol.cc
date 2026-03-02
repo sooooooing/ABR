@@ -1214,6 +1214,8 @@ RoutingProtocol::SendRequest(Ipv4Address dst)
         }
         NS_LOG_DEBUG("Send RREQ with id " << rreqHeader.GetId() << " to socket");
         m_lastBcastTime = Simulator::Now();
+        NS_LOG_UNCOND("RREQ header: ");
+        rHeader.Print(std::cout);
 
         // 즉시 전송하지 않고 랜덤 지연 후 전송
         Simulator::Schedule(Time(MilliSeconds(m_uniformRandomVariable->GetInteger(0, 10))),
@@ -1394,6 +1396,8 @@ RoutingProtocol::RecvRequest(Ptr<Packet> p, Ipv4Address receiver, Ipv4Address sr
     RreqHeader rreqHeader;
     p->RemoveHeader(rreqHeader);
 
+        NS_LOG_UNCOND("receiver " << receiver << " received RREQ: ");
+    rreqHeader.Print(std::cout);
     // A node ignores all RREQs received from any node in its blacklist
     RoutingTableEntry toPrev;
     if (m_routingTable.LookupRoute(src, toPrev))
@@ -1502,13 +1506,16 @@ RoutingProtocol::RecvRequest(Ptr<Packet> p, Ipv4Address receiver, Ipv4Address sr
     // rreq를 받은 노드가 목적지이면 일정시간 대기해 후보 RREQ 수집후 최적 경로 결정 후 RREP 생성
     if (isDst)
     {
+        std::vector<NeighborTick> allTicks = m_ntable.GetAllNeighborTicks();
+        rreqHeader.AppendMetricBlock(receiver, allTicks);
+        // me와 관련되지 않은 tick 정보 제거
         bool pruned = rreqHeader.PruneUpstreamMetricBlock(src, receiver);
+
+        // pruning 실패시
         if (!pruned)
         {
             uint32_t t = m_ntable.GetAssocTick(src);
-            if (t == 0)
-                t = 1;
-            rreqHeader.ForceSetUpstreamTick(src, receiver, t);
+            // rreqHeader.ForceSetUpstreamTick(src, receiver, t);
         }
         DestKey key{origin, id};
         m_destCandidates[key].push_back(rreqHeader);
@@ -1535,10 +1542,6 @@ RoutingProtocol::RecvRequest(Ptr<Packet> p, Ipv4Address receiver, Ipv4Address sr
     if (!pruned)
     {
         uint32_t t = m_ntable.GetAssocTick(src);
-
-        if (t == 0)
-            t = 1;
-
         rreqHeader.ForceSetUpstreamTick(src, receiver, t);
     }
 
@@ -1581,11 +1584,6 @@ void
 RoutingProtocol::SendReply(const RreqHeader& rreqHeader, const RoutingTableEntry& toOrigin)
 {
     NS_LOG_FUNCTION(this << toOrigin.GetDestination());
-    NS_LOG_UNCOND("DEST SendReply: dst="
-                  << rreqHeader.GetDst() << " origin=" << rreqHeader.GetOrigin()
-                  << " toOriginEntry: dst=" << toOrigin.GetDestination()
-                  << " nextHop=" << toOrigin.GetNextHop() << " iface=" << toOrigin.GetInterface()
-                  << " lifetime=" << toOrigin.GetLifeTime().GetSeconds());
 
     if (!rreqHeader.GetUnknownSeqno() && (rreqHeader.GetDstSeqno() == m_seqNo + 1))
     {
@@ -1718,19 +1716,6 @@ RoutingProtocol::RecvReply(Ptr<Packet> p, Ipv4Address receiver, Ipv4Address send
         return;
     }
 
-    /*
-     * If the route table entry to the destination is created or updated, then the following actions
-     * occur:
-     * -  the route is marked as active,
-     * -  the destination sequence number is marked as valid,
-     * -  the next hop in the route entry is assigned to be the node from which the RREP is
-     * received, which is indicated by the source IP address field in the IP header,
-     * -  the hop count is set to the value of the hop count from RREP message + 1
-     * -  the expiry time is set to the current time plus the value of the Lifetime in the RREP
-     * message,
-     * -  and the destination sequence number is the Destination Sequence Number in the RREP
-     * message.
-     */
     Ptr<NetDevice> dev = m_ipv4->GetNetDevice(m_ipv4->GetInterfaceForAddress(receiver));
     RoutingTableEntry newEntry(
         /*dev=*/dev,

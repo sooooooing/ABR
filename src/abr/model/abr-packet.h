@@ -206,7 +206,7 @@ class RreqHeader : public Header
     void Serialize(Buffer::Iterator start) const override;
     uint32_t Deserialize(Buffer::Iterator start) override;
     void Print(std::ostream& os) const override;
-    void ForceSetUpstreamTick(Ipv4Address upstreamOwner, Ipv4Address me, uint32_t tick);
+    void ForceSetUpstreamTick(Ipv4Address sender, Ipv4Address me, uint32_t tick);
 
     // Fields
     /**
@@ -359,7 +359,6 @@ class RreqHeader : public Header
     void AppendInId(Ipv4Address id); // IN_ID 경로 누적
     void AppendMetricBlock(Ipv4Address owner,
                            const std::vector<NeighborTick>& ticks); // MetricBlock 누적
-    bool PruneLastMetricBlock(Ipv4Address me); // 나와 upstream 사이 tick만 유지
     bool PruneUpstreamMetricBlock(Ipv4Address upstreamOwner, Ipv4Address me);
 
     bool operator==(const RreqHeader& o) const;
