@@ -408,15 +408,16 @@ RoutingProtocol::PrintRoutingTable(Ptr<OutputStreamWrapper> stream, Time::Unit u
     *stream->GetStream() << std::endl;
 }
 
-// 수정하기
 void
-RoutingProtocol::PrintNeighborTable(Ptr<OutputStreamWrapper> stream) const
+RoutingProtocol::PrintNeighborTable(Ipv4Address address) const
 {
-    std::ostream* os = stream->GetStream();
-    *os << "Node: " << m_ipv4->GetObject<Node>()->GetId()
-        << ", Time: " << Simulator::Now().GetSeconds() << "s, NeighborTable\n";
-    m_ntable.Print(*os);
-    *os << "\n";
+    std::cout << "Node: " << m_ipv4->GetObject<Node>()->GetId() << "; Time: " << Now().As(Time::S)
+              << ", Local time: " << m_ipv4->GetObject<Node>()->GetLocalTime().As(Time::S)
+              << ", ABR Neighbor table \n"
+              << std::endl;
+
+    m_ntable.Print(address);
+    std::cout << std::endl;
 }
 
 int64_t
@@ -1214,8 +1215,8 @@ RoutingProtocol::SendRequest(Ipv4Address dst)
         }
         NS_LOG_DEBUG("Send RREQ with id " << rreqHeader.GetId() << " to socket");
         m_lastBcastTime = Simulator::Now();
-        NS_LOG_UNCOND("RREQ header: ");
-        rHeader.Print(std::cout);
+        // NS_LOG_UNCOND("RREQ header: ");
+        // rHeader.Print(std::cout);
 
         // 즉시 전송하지 않고 랜덤 지연 후 전송
         Simulator::Schedule(Time(MilliSeconds(m_uniformRandomVariable->GetInteger(0, 10))),
@@ -1396,8 +1397,9 @@ RoutingProtocol::RecvRequest(Ptr<Packet> p, Ipv4Address receiver, Ipv4Address sr
     RreqHeader rreqHeader;
     p->RemoveHeader(rreqHeader);
 
-        NS_LOG_UNCOND("receiver " << receiver << " received RREQ: ");
-    rreqHeader.Print(std::cout);
+    // RREQ 받았을떄 출력
+    // NS_LOG_UNCOND("receiver " << receiver << " received RREQ: ");
+    // rreqHeader.Print(std::cout);
     // A node ignores all RREQs received from any node in its blacklist
     RoutingTableEntry toPrev;
     if (m_routingTable.LookupRoute(src, toPrev))
@@ -1408,6 +1410,9 @@ RoutingProtocol::RecvRequest(Ptr<Packet> p, Ipv4Address receiver, Ipv4Address sr
             return;
         }
     }
+
+    // 이웃테이블 출력
+    // PrintNeighborTable(receiver);
 
     // TODO
     // 목적지인 경우에는 RREP를 보내기 전에 일정 시간 대기하여 후보 RREQ들을 모은 후 가장 좋은
@@ -1506,15 +1511,15 @@ RoutingProtocol::RecvRequest(Ptr<Packet> p, Ipv4Address receiver, Ipv4Address sr
     // rreq를 받은 노드가 목적지이면 일정시간 대기해 후보 RREQ 수집후 최적 경로 결정 후 RREP 생성
     if (isDst)
     {
-        std::vector<NeighborTick> allTicks = m_ntable.GetAllNeighborTicks();
-        rreqHeader.AppendMetricBlock(receiver, allTicks);
-        // me와 관련되지 않은 tick 정보 제거
+        // std::vector<NeighborTick> allTicks = m_ntable.GetAllNeighborTicks();
+        // rreqHeader.AppendMetricBlock(receiver, allTicks);
+        //  me와 관련되지 않은 tick 정보 제거
         bool pruned = rreqHeader.PruneUpstreamMetricBlock(src, receiver);
 
         // pruning 실패시
         if (!pruned)
         {
-            uint32_t t = m_ntable.GetAssocTick(src);
+            // uint32_t t = m_ntable.GetAssocTick(src);
             // rreqHeader.ForceSetUpstreamTick(src, receiver, t);
         }
         DestKey key{origin, id};
@@ -1541,8 +1546,8 @@ RoutingProtocol::RecvRequest(Ptr<Packet> p, Ipv4Address receiver, Ipv4Address sr
     bool pruned = rreqHeader.PruneUpstreamMetricBlock(src, receiver);
     if (!pruned)
     {
-        uint32_t t = m_ntable.GetAssocTick(src);
-        rreqHeader.ForceSetUpstreamTick(src, receiver, t);
+        // uint32_t t = m_ntable.GetAssocTick(src);
+        //  reqHeader.ForceSetUpstreamTick(src, receiver, t);
     }
 
     std::vector<NeighborTick> allTicks = m_ntable.GetAllNeighborTicks();
@@ -1902,9 +1907,7 @@ RoutingProtocol::ProcessHello(const RrepHeader& rrepHeader,
     }
 
     // Hello를 보낸 노드 엔트리에 관해서 tick 증가
-    m_ntable.IncreaseTick(neighbor);
-    // NS_LOG_UNCOND("HELLO rx: me=" << receiver << " from=" << rrepHeader.GetDst()
-    //                               << " tick=" << m_ntable.GetAssocTick(rrepHeader.GetDst()));
+    m_ntable.IncreaseTick(sender, receiver);
 
     // HEllo 메시지를 받으면 update
     if (m_enableHello)
@@ -2147,8 +2150,10 @@ RoutingProtocol::SendRerrWhenBreaksLinkToNextHop(Ipv4Address nextHop) // nextHop
     NS_LOG_FUNCTION(this << nextHop);
 
     // NT 초기화
-    m_ntable.DeleteNeighbor(nextHop);
-    // NS_LOG_UNCOND("route break: " << nextHop << " hasNT=" << m_ntable.HasNeighbor(nextHop));
+    m_ntable.ResetTick(nextHop);
+    // m_ntable.DeleteNeighbor(nextHop);
+    // NS_LOG_UNCOND("route break error");
+    //  NS_LOG_UNCOND("route break: " << nextHop << " hasNT=" << m_ntable.HasNeighbor(nextHop));
 
     RerrHeader rerrHeader;
     std::vector<Ipv4Address> precursors;
@@ -2419,6 +2424,7 @@ RoutingProtocol::DestDecision(DestKey key)
     }
 
     // 선택된 경로 로그 출력
+
     NS_LOG_UNCOND("=== ABR SELECTED PATH ===");
     NS_LOG_UNCOND("HopCount: " << (uint32_t)best.GetHopCount());
 

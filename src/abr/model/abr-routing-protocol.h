@@ -90,7 +90,7 @@ class RoutingProtocol : public Ipv4RoutingProtocol
     void SetIpv4(Ptr<Ipv4> ipv4) override;
     void PrintRoutingTable(Ptr<OutputStreamWrapper> stream,
                            Time::Unit unit = Time::S) const override;
-    void PrintNeighborTable(Ptr<OutputStreamWrapper> stream) const;
+    void PrintNeighborTable(Ipv4Address address) const;
 
     // Handle protocol parameters
     /**

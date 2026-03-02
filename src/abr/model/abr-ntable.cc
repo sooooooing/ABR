@@ -2,6 +2,8 @@
 
 #include "abr-packet.h"
 
+#include <algorithm>
+#include <iomanip>
 #include <limits>
 
 namespace ns3
@@ -19,7 +21,6 @@ NeighborTableEntry::~NeighborTableEntry() = default;
 
 NeighborTable::NeighborTable() = default;
 
-// 해당 이웃이 NT에 존재하는지 확인
 bool
 NeighborTable::HasNeighbor(Ipv4Address neighbor)
 {
@@ -40,14 +41,17 @@ NeighborTable::GetAssocTick(Ipv4Address neighbor)
 
 // 해당 이웃의 tick 삽입 (처음 본 이웃이면 tick=1로 시작, 이미 있으면 tick++)
 void
-NeighborTable::IncreaseTick(Ipv4Address neighbor)
+NeighborTable::IncreaseTick(Ipv4Address sender, Ipv4Address receiver)
 {
+    Ipv4Address neighbor = sender;
     auto it = m_neighborTable.find(neighbor);
 
     // 처음 본 이웃이면 tick=1로 시작
     if (it == m_neighborTable.end())
     {
         m_neighborTable.emplace(neighbor, NeighborTableEntry(neighbor, 1));
+        // NS_LOG_UNCOND("TICK-NEW  : me=" << receiver << " neighbor=" << neighbor << " tick=1"
+        //                                 << " nt_size=" << m_neighborTable.size());
         return;
     }
 
@@ -58,8 +62,9 @@ NeighborTable::IncreaseTick(Ipv4Address neighbor)
         it->second.SetAssocTick(t + 1);
     }
 
-    // NS_LOG_UNCOND("NT inc: " << neighbor << " now=" << it->second.GetAssocTick()
-    //                          << " size=" << m_neighborTable.size());
+    // NS_LOG_UNCOND("TICK-INC  : me=" << receiver << " neighbor=" << neighbor << " tick " << t
+    //                                 << " -> " << it->second.GetAssocTick()
+    //                                 << " nt_size=" << m_neighborTable.size());
 }
 
 // 해당 이웃 삭제
@@ -81,15 +86,16 @@ NeighborTable::GetAllNeighbors() const
     return neighbors;
 }
 
-void
-NeighborTable::Print(std::ostream& os) const
+bool
+NeighborTable::ResetTick(Ipv4Address neighbor)
 {
-    os << "NeighborTable\n";
-    os << "Neighbor\tAssocTick\n";
-    for (const auto& entry : m_neighborTable)
+    auto it = m_neighborTable.find(neighbor);
+    if (it == m_neighborTable.end())
     {
-        os << entry.first << "\t" << entry.second.GetAssocTick() << "\n";
+        return false; // unknown neighbor
     }
+    it->second.SetAssocTick(0);
+    return true;
 }
 
 std::vector<NeighborTick>
@@ -106,6 +112,16 @@ NeighborTable::GetAllNeighborTicks() const
         ticks.push_back(nt);
     }
     return ticks;
+}
+
+void
+NeighborTable::Print(Ipv4Address address) const
+{
+    std::cout << "Neighbor" << std::setw(16) << "Tick" << std::endl;
+    for (auto& entry : m_neighborTable)
+    {
+        std::cout << entry.first << std::setw(16) << entry.second.GetAssocTick() << std::endl;
+    }
 }
 
 } // namespace abr

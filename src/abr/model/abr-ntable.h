@@ -62,20 +62,24 @@ class NeighborTable
 
     bool HasNeighbor(Ipv4Address neighbor);
     uint32_t GetAssocTick(Ipv4Address neighbor);
-    void IncreaseTick(Ipv4Address neighbor);
+    void IncreaseTick(Ipv4Address sender, Ipv4Address receiver);
     bool DeleteNeighbor(Ipv4Address neighbor);
     std::vector<std::pair<Ipv4Address, uint32_t>> GetAllNeighbors() const;
     std::vector<NeighborTick> GetAllNeighborTicks() const;
+    bool ResetTick(Ipv4Address neighbor);
 
     void Clear()
     {
         m_neighborTable.clear();
     } // 이웃 테이블 초기화
 
-    void Print(std::ostream& os) const;
+    void Print(Ipv4Address address) const; // 이웃 테이블 출력
+    void storeNeighborTableToFile(Ipv4Address address) const;
 
   private:
     std::map<Ipv4Address, NeighborTableEntry> m_neighborTable; // 이웃 테이블
+    void Purge(
+        std::map<Ipv4Address, NeighborTableEntry>& table) const; // 이웃 테이블에서 오래된 항목 제거
 };
 
 } // namespace abr

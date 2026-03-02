@@ -289,8 +289,9 @@ RreqHeader::Deserialize(Buffer::Iterator start)
 void
 RreqHeader::Print(std::ostream& os) const
 {
-    os << "RREQ id =" << m_requestID << " dst =" << m_dst << " origin =" << m_origin
-       << " hop =" << unsigned(m_hopCount);
+    os << "\n";
+    os << "RREQ id = " << m_requestID << " dst = " << m_dst << " origin = " << m_origin
+       << " hop = " << unsigned(m_hopCount);
     os << "\n";
     os << "IN_IDS = [";
     for (const auto& id : m_inIds)
