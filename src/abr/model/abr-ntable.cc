@@ -57,8 +57,9 @@ NeighborTable::IncreaseTick(Ipv4Address neighbor)
     {
         it->second.SetAssocTick(t + 1);
     }
-    // std::cout << "NT inc " << neighbor << " " << t << "->" << it->second.GetAssocTick()
-    //           << " size=" << m_neighborTable.size() << "\n";
+
+    // NS_LOG_UNCOND("NT inc: " << neighbor << " now=" << it->second.GetAssocTick()
+    //                          << " size=" << m_neighborTable.size());
 }
 
 // 해당 이웃 삭제

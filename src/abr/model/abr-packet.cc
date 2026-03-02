@@ -289,22 +289,47 @@ RreqHeader::Deserialize(Buffer::Iterator start)
 void
 RreqHeader::Print(std::ostream& os) const
 {
-    os << "RREQ ID " << m_requestID << " dst=" << m_dst << " src=" << m_origin
-       << " hop=" << unsigned(m_hopCount);
-
-    os << " | IN_IDS: ";
+    os << "RREQ id =" << m_requestID << " dst =" << m_dst << " origin =" << m_origin
+       << " hop =" << unsigned(m_hopCount);
+    os << "\n";
+    os << "IN_IDS = [";
     for (const auto& id : m_inIds)
-        os << id << " ";
+    {
+        if (id == m_inIds.back())
+        {
+            os << id;
+        }
+        else
+        {
+            os << id << ",  ";
+        }
+    }
+    os << "]";
+    os << "\n";
 
-    os << " | METRICS: ";
+    os << "METRICS =";
+    os << " {";
+    os << "\n";
     for (const auto& block : m_metricBlocks)
     {
-        os << "[owner=" << block.owner << " : ";
+        os << "             " << block.owner << " # -> [";
         for (const auto& t : block.ticks)
-            os << "(" << t.neighbor << ", " << t.tick << ") ";
-        os << "] ";
-        os << "\n";
+        {
+            os << t.neighbor << " - " << t.tick << "";
+            if (t.neighbor != block.ticks.back().neighbor)
+            {
+                os << ",  ";
+            }
+        }
+        os << "]";
+        if (&block != &m_metricBlocks.back())
+        {
+            os << "\n";
+        }
     }
+    os << "\n";
+    os << "          }";
+    os << "\n";
 }
 
 std::ostream&
@@ -380,92 +405,79 @@ RreqHeader::AppendInId(Ipv4Address inId)
 void
 RreqHeader::AppendMetricBlock(Ipv4Address owner, const std::vector<NeighborTick>& ticks)
 {
+    if (ticks.empty())
+    {
+        return;
+    }
+
     MetricBlock block;
     block.owner = owner;
     block.ticks = ticks;
     m_metricBlocks.push_back(block);
 }
 
-bool
-RreqHeader::PruneLastMetricBlock(Ipv4Address me)
-{
-    if (m_metricBlocks.empty())
-    {
-        return false;
-    }
-    MetricBlock& lastBlock = m_metricBlocks.back(); // 마지막 metricblock 가져오기
-    if (lastBlock.ticks.empty())
-    {
-        return false;
-    }
-
-    // 나와 upstream 사이 tick만 유지
-    std::vector<NeighborTick> prunedTicks;
-
-    for (const auto& tick : lastBlock.ticks)
-    {
-        if (tick.neighbor != me)
-        {
-            continue;
-        }
-        else
-        {
-            prunedTicks.push_back(tick);
-            break;
-        }
-    }
-
-    // prunedTicks에 나와 upstream 사이 tick만 저장되어 있음
-    if (prunedTicks.empty())
-    {
-        return false;
-    }
-
-    // lastBlock의 ticks를 prunedTicks로 업데이트
-    lastBlock.ticks = prunedTicks;
-    return true;
-}
-
+// upstream이 보내는 ticks 중에서 me와 관련된 tick만 남기고 나머지는 제거
 bool
 RreqHeader::PruneUpstreamMetricBlock(Ipv4Address upstreamOwner, Ipv4Address me)
 {
+    // metric block이 비어있는 경우
     if (m_metricBlocks.empty())
     {
+        NS_LOG_UNCOND("No metric block to prune for upstream " << upstreamOwner);
         return false;
     }
 
+    // 역순으로
     for (auto it = m_metricBlocks.rbegin(); it != m_metricBlocks.rend(); ++it)
     {
         if (it->owner != upstreamOwner)
-        {
             continue;
-        }
 
         if (it->ticks.empty())
         {
+            NS_LOG_UNCOND("ticks empty for upstream " << upstreamOwner);
             return false;
         }
 
-        std::vector<NeighborTick> prunedTicks;
         for (const auto& t : it->ticks)
         {
             if (t.neighbor == me)
             {
-                prunedTicks.push_back(t);
-                break;
+                it->ticks = {t};
+                return true;
             }
         }
 
-        if (prunedTicks.empty())
-        {
-            return false;
-        }
-
-        it->ticks = prunedTicks;
-        return true;
+        NS_LOG_UNCOND("No tick for me " << me << " in metric block for upstream " << upstreamOwner);
+        return false;
     }
 
     return false;
+}
+
+void
+RreqHeader::ForceSetUpstreamTick(Ipv4Address sender, Ipv4Address me, uint32_t tick)
+{
+    NeighborTick nt;
+    nt.neighbor = me;
+    nt.tick = tick;
+
+    for (auto it = m_metricBlocks.rbegin(); it != m_metricBlocks.rend(); ++it)
+    {
+        if (it->owner == sender)
+        {
+            NS_LOG_UNCOND("Print sender's origin ticks -> " << sender << "'s tick:  " << me << "->"
+                                                            << tick);
+            it->ticks.clear();
+            it->ticks.push_back(nt);
+            return;
+        }
+    }
+
+    MetricBlock mb;
+    mb.owner = sender;
+    mb.ticks = {nt};
+    m_metricBlocks.push_back(mb);
 }
 
 bool

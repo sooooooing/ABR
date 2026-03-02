@@ -369,7 +369,9 @@ class RoutingProtocol : public Ipv4RoutingProtocol
      * \param rrepHeader RREP message header
      * \param receiverIfaceAddr receiver interface IP address
      */
-    void ProcessHello(const RrepHeader& rrepHeader, Ipv4Address receiverIfaceAddr);
+    void ProcessHello(const RrepHeader& rrepHeader,
+                      Ipv4Address receiverIfaceAddr,
+                      Ipv4Address sender);
     /**
      * Create loopback route for given header
      *
